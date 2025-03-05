@@ -1,0 +1,145 @@
+// Función para obtener el token de sessionStorage
+function getAuthToken() {
+    return sessionStorage.getItem("authToken");
+}
+
+// Función para obtener los profesores con autenticación
+async function fetchTeachers() {
+    const response = await fetch("http://localhost:3000/teachers", {
+        headers: {
+            "Authorization": getAuthToken()
+        }
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        alert("Unauthorized! Please log in.");
+        window.location.href = "login.html";
+        return;
+    }
+
+    const teachers = await response.json();
+    const table = document.getElementById("teacherTable");
+    table.innerHTML = "";
+    teachers.forEach(teacher => {
+        table.innerHTML += `
+            <tr>
+                <td>${teacher.first_name}</td>
+                <td>${teacher.last_name}</td>
+                <td>${teacher.age}</td>
+                <td>${teacher.cedula}</td>
+                <td>
+                    <button onclick="editTeacher('${teacher._id}')" class="btn btn-warning">Edit</button>
+                    <button onclick="deleteTeacher('${teacher._id}')" class="btn btn-danger">Delete</button>
+                </td>
+            </tr>`;
+    });
+}
+
+// Función para obtener los cursos con autenticación
+async function fetchCourses() {
+    const response = await fetch("http://localhost:3000/courses", {
+        headers: {
+            "Authorization": getAuthToken()
+        }
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        alert("Unauthorized! Please log in.");
+        window.location.href = "login.html";
+        return;
+    }
+
+    const courses = await response.json();
+    const table = document.getElementById("courseTable");
+    table.innerHTML = "";
+    courses.forEach(course => {
+        const teacherName = course.teacher ? `${course.teacher.first_name} ${course.teacher.last_name}` : "No Teacher";
+        table.innerHTML += `
+            <tr>
+                <td>${course.name}</td>
+                <td>${course.code}</td>
+                <td>${course.description}</td>
+                <td>${teacherName}</td>
+                <td>
+                    <button onclick="editCourse('${course._id}')" class="btn btn-warning">Edit</button>
+                    <button onclick="deleteCourse('${course._id}')" class="btn btn-danger">Delete</button>
+                </td>
+            </tr>`;
+    });
+}
+
+// Modificar las solicitudes POST, PUT y DELETE para incluir el header Authorization
+async function deleteTeacher(id) {
+    await fetch(`http://localhost:3000/teachers?id=${id}`, {
+        method: "DELETE",
+        headers: {
+            "Authorization": getAuthToken()
+        }
+    });
+    fetchTeachers();
+}
+
+async function deleteCourse(id) {
+    await fetch(`http://localhost:3000/courses?id=${id}`, {
+        method: "DELETE",
+        headers: {
+            "Authorization": getAuthToken()
+        }
+    });
+    fetchCourses();
+}
+
+// Al cargar la página, verificar autenticación y cargar datos
+document.addEventListener("DOMContentLoaded", () => {
+    if (!getAuthToken()) {
+        alert("Please log in.");
+        window.location.href = "login.html";
+    } else {
+        fetchTeachers();
+        fetchCourses();
+    }
+});
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="js/functions.js" defer></script>
+</head>
+<body>
+  <div class="container my-5">
+    <h1>Teacher Management</h1>
+
+    <h2>Create Teacher</h2>
+    <form id="teacherForm">
+      <div class="mb-3">
+        <label for="first_name" class="form-label">First Name</label>
+        <input type="text" id="first_name" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label for="last_name" class="form-label">Last Name</label>
+        <input type="text" id="last_name" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label for="cedula" class="form-label">Cedula</label>
+        <input type="text" id="cedula" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label for="age" class="form-label">Age</label>
+        <input type="number" id="age" class="form-control">
+      </div>
+      <button type="button" class="btn btn-primary" id="submitButton" onclick="createTeacher()">Create Teacher</button>
+    </form>
+
+    <h2 class="mt-5">List of Teachers</h2>
+    <button class="btn btn-secondary mb-3" onclick="getTeacherssss()">Refresh List</button>
+    <ul id="teacherList" class="list-group"></ul>
+
+    <!-- Botón para ir a courses.html -->
+    <a href="courses.html" class="btn btn-info mt-4">Go to Courses</a>
+  </div>
+</body>
+</html>
